@@ -3,6 +3,7 @@ using System.Activities;
 using System.Activities.Statements;
 using System.Activities.Validation;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,11 +92,11 @@ namespace EnhancedTimerTrigger
             void DoTrigger(OutArgs outArgs) => sendTrigger(new EnhancedTimerTriggerArgs(outArgs));
         }
 
-        protected override void StopMonitor(ActivityContext context) { tokenSource.Cancel(); }
+        protected override void StopMonitor(System.Activities.ActivityContext context) { tokenSource.Cancel(); }
 
 
-        static void Poling(Action<OutArgs> callback, InArgs inargs,  CancellationToken token)
-        {            
+        static void Poling(Action<OutArgs> callback, InArgs inargs, CancellationToken token)
+        {
             var initialTargetDt = inargs.initialTargetDateTime;
             var interval = inargs.interval;
             var targetMode = inargs.mode;
@@ -106,7 +107,7 @@ namespace EnhancedTimerTrigger
             var sigma = inargs.sigma;
             var polingInterval = inargs.polingInterval;
 
-            int seed = (Environment.TickCount + Int32.Parse(DateTime.Now.ToString("ssMMHH"))+Environment.MachineName.Select((x, i) => (Int32)(x)+i*8).Sum(v=>v));
+            int seed = (Environment.TickCount + Int32.Parse(DateTime.Now.ToString("ssMMHH")) + Environment.MachineName.Select((x, i) => (Int32)(x) + i * 8).Sum(v => v));
             var rnd = new Random(seed);
 
             DateTime currentTargetDateTime;
@@ -116,9 +117,9 @@ namespace EnhancedTimerTrigger
             DateTime triggeredDateTime;
 
             currentStandardTargetDateTime = initialTargetDt;
-            currentTargetDateTime = AddRandomSec(currentStandardTargetDateTime,isAddRandom,lowerLimit,upperLimit,isAddNormalDist,sigma,rnd);
+            currentTargetDateTime = AddRandomSec(currentStandardTargetDateTime, isAddRandom, lowerLimit, upperLimit, isAddNormalDist, sigma, rnd);
 
-            while(true)
+            while (true)
             {
                 if (token.IsCancellationRequested) break;
                 Thread.Sleep(polingInterval);
@@ -139,19 +140,19 @@ namespace EnhancedTimerTrigger
                         nextStandardTargetDateTime = nextStandardTargetDateTime.AddSeconds(interval);
                     }
                     nextTargetDateTime = AddRandomSec(nextStandardTargetDateTime, isAddRandom, lowerLimit, upperLimit, isAddNormalDist, sigma, rnd);
-                    callback(new OutArgs(currentTargetDateTime,currentStandardTargetDateTime,nextTargetDateTime,triggeredDateTime));
+                    callback(new OutArgs(currentTargetDateTime, currentStandardTargetDateTime, nextTargetDateTime, triggeredDateTime));
                     currentTargetDateTime = nextTargetDateTime;
                     currentStandardTargetDateTime = nextStandardTargetDateTime;
                 }
             }
         }
 
-        static DateTime AddRandomSec(DateTime stdDateTime, bool isAddRandom, Int32 lower, Int32 upper,bool isAddNormDist,double sigma, Random rnd)
+        static DateTime AddRandomSec(DateTime stdDateTime, bool isAddRandom, Int32 lower, Int32 upper, bool isAddNormDist, double sigma, Random rnd)
         {
             DateTime result = stdDateTime;
             if (isAddRandom)
             {
-                result = result.AddSeconds(rnd.NextDouble() * (double)(upper - lower)+(double)lower);
+                result = result.AddSeconds(rnd.NextDouble() * (double)(upper - lower) + (double)lower);
             }
 
             if (isAddNormDist)
@@ -195,7 +196,7 @@ namespace EnhancedTimerTrigger
         internal double sigma;
         internal Int32 polingInterval;
 
-        internal InArgs(DateTime _targetDt, Int32 _interval,bool _mode,bool _addRandom,Int32 _lowerLimit, Int32 _upperLimit,bool _addNormalDistRandom, double _sigma,Int32 _polingInterval)
+        internal InArgs(DateTime _targetDt, Int32 _interval, bool _mode, bool _addRandom, Int32 _lowerLimit, Int32 _upperLimit, bool _addNormalDistRandom, double _sigma, Int32 _polingInterval)
         {
             initialTargetDateTime = _targetDt;
             interval = _interval;
@@ -215,7 +216,7 @@ namespace EnhancedTimerTrigger
         public DateTime currentStandardtargetDateTime;
         public DateTime actualTriggeredDateTime;
         public DateTime nextTargetDateTime;
-        public OutArgs(DateTime _currentDt, DateTime _curentStdDt, DateTime _nextDt,DateTime _actualDt)
+        public OutArgs(DateTime _currentDt, DateTime _curentStdDt, DateTime _nextDt, DateTime _actualDt)
         {
             currentTargetDateTime = _currentDt;
             currentStandardtargetDateTime = _curentStdDt;
@@ -224,5 +225,5 @@ namespace EnhancedTimerTrigger
         }
     }
 
-    
+
 }
